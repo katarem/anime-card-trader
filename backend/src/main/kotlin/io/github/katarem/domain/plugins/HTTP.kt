@@ -1,4 +1,4 @@
-package com.example.plugins
+package io.github.katarem.domain.plugins
 
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -10,10 +10,12 @@ import io.ktor.server.routing.*
 
 fun Application.configureHTTP() {
     routing {
-        swaggerUI(path = "openapi")
+        openAPI(path = "openapi")
     }
     routing {
-        openAPI(path = "openapi")
+        swaggerUI(path = "swagger", swaggerFile = "openapi/documentation.yaml") {
+            version = "4.15.5"
+        }
     }
     install(CORS) {
         allowMethod(HttpMethod.Options)

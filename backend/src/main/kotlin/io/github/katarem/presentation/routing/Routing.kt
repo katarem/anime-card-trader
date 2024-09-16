@@ -1,4 +1,4 @@
-package com.example.plugins
+package io.github.katarem.presentation.routing
 
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -6,6 +6,7 @@ import io.ktor.server.http.content.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import java.io.File
 
 fun Application.configureRouting() {
     install(StatusPages) {
@@ -13,13 +14,12 @@ fun Application.configureRouting() {
             call.respondText(text = "500: $cause" , status = HttpStatusCode.InternalServerError)
         }
     }
+    // Routes
+    characterRoute()
+    cardsRoutes()
+    userRoutes()
+
     routing {
-        get("/") {
-            call.respondText("Hello World!")
-        }
-        // Static plugin. Try to access `/static/index.html`
-        static("/static") {
-            resources("static")
-        }
+        staticFiles("/files", File("./files"))
     }
 }

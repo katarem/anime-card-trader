@@ -1,6 +1,6 @@
-package com.example
+package io.github.katarem
 
-import com.example.plugins.*
+import io.github.katarem.presentation.routing.configureRouting
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*

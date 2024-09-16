@@ -1,23 +1,524 @@
-openapi: "3.0.3"
+openapi: 3.0.0
 info:
-  title: "Application API"
-  description: "Application API"
-  version: "1.0.0"
+  title: Anime Cards API
+  description: API for managing anime cards and checking their availability.
+  version: 1.0.0
 servers:
-  - url: "http://0.0.0.0:8080"
+  - url: http://localhost:8080
+    description: Local server
+
 paths:
-  /:
+  /cards/debug:
     get:
-      description: "Hello World!"
+      summary: Get debug information of the server time
+      description: Returns the server time adjusted by the number of hours specified in the query parameter.
+      parameters:
+        - in: query
+          name: hours
+          schema:
+            type: integer
+          required: false
+          description: Number of hours to subtract from the current time
       responses:
-        "200":
-          description: "OK"
+        200:
+          description: Server time adjusted by the specified hours
           content:
-            text/plain:
+            application/json:
               schema:
-                type: "string"
-              examples:
-                Example#1:
-                  value: "Hello World!"
+                type: string
+                format: date-time
+        400:
+          description: Bad request if the hours parameter is invalid
+      tags:
+        - cards
+  /cards/check:
+    post:
+      summary: Check card availability for a user
+      description: Checks whether a user can request a new card based on the last check time.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDTO'
+      responses:
+        200:
+          description: Card availability response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+      tags:
+        - cards
+  /cards:
+    get:
+      summary: Get all anime cards
+      description: Retrieves a list of all anime cards.
+      responses:
+        200:
+          description: A list of anime cards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AnimeCardDTO'
+      tags:
+        - cards
+    post:
+      summary: Add a new anime card
+      description: Adds a new anime card to the system.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnimeCardDTO'
+      responses:
+        200:
+          description: The newly added anime card
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnimeCardDTO'
+        409:
+          description: Conflict if the card could not be added
+      tags:
+        - cards
+  /cards/{id}:
+    get:
+      summary: Get an anime card by ID
+      description: Retrieves a specific anime card by its ID.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: UUID of the anime card
+      responses:
+        200:
+          description: The anime card details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnimeCardDTO'
+        404:
+          description: Not found if the card doesn't exist
+      tags:
+        - cards
+    put:
+      summary: Update an existing anime card
+      description: Updates the details of an anime card with the given ID.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: UUID of the anime card to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnimeCardDTO'
+      responses:
+        200:
+          description: The updated anime card
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnimeCardDTO'
+        404:
+          description: Not found if the card doesn't exist
+      tags:
+        - cards
+    delete:
+      summary: Delete an anime card
+      description: Deletes the anime card with the given ID.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: UUID of the anime card
+      responses:
+        202:
+          description: Accepted if the card was deleted
+        400:
+          description: Bad request if the card could not be deleted
+      tags:
+        - cards
+  /character/create:
+    post:
+      summary: Create multiple characters
+      operationId: createCharacters
+      requestBody:
+        description: List of characters to be created
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/CharacterDTO'
+      responses:
+        '200':
+          description: Characters created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: One or more characters already exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+      tags:
+        - characters
+
+  /character/search:
+    get:
+      summary: Search characters based on filters
+      operationId: searchCharacters
+      parameters:
+        - name: name
+          in: query
+          schema:
+            type: string
+          description: Filter by character name
+        - name: origin
+          in: query
+          schema:
+            type: string
+          description: Filter by character origin
+        - name: gender
+          in: query
+          schema:
+            type: string
+          description: Filter by character gender
+      responses:
+        '200':
+          description: List of characters that match the filters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '404':
+          description: No characters found with specified filters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+      tags:
+        - characters
+  /character:
+    get:
+      summary: Get all characters
+      operationId: getAllCharacters
+      responses:
+        '200':
+          description: List of all characters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+      tags:
+        - characters
+    post:
+      summary: Create a new character
+      operationId: createCharacter
+      requestBody:
+        description: Character to be created
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CharacterDTO'
+      responses:
+        '202':
+          description: Character created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CharacterDTO'
+        '409':
+          description: Character already exists
+          content:
+            application/json:
+              schema:
+                type: string
+      tags:
+        - characters
+  /character/{id}:
+    get:
+      summary: Get character by ID
+      operationId: getCharacterById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the character to retrieve
+      responses:
+        '200':
+          description: Character found by ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CharacterDTO'
+        '404':
+          description: Character not found
+          content:
+            application/json:
+              schema:
+                type: string
+      tags:
+        - characters
+    put:
+      summary: Update character by ID
+      operationId: updateCharacter
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the character to update
+      requestBody:
+        description: Character object with updated information
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CharacterDTO'
+      responses:
+        '200':
+          description: Character updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CharacterDTO'
+        '404':
+          description: Character not found
+          content:
+            application/json:
+              schema:
+                type: string
+      tags:
+        - characters
+    delete:
+      summary: Delete character by ID
+      operationId: deleteCharacter
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the character to delete
+      responses:
+        '202':
+          description: Character deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '404':
+          description: Character not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+      tags:
+        - characters
+
+  /users:
+    get:
+      summary: Get all users
+      operationId: getAllUsers
+      responses:
+        '200':
+          description: A list of users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+      tags:
+        - users
+    post:
+      summary: Create a new user
+      operationId: createUser
+      requestBody:
+        description: User object that needs to be added
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDTO'
+      responses:
+        '200':
+          description: The created user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: Invalid input
+      tags:
+        - users
+  /users/{id}:
+    get:
+      summary: Get a user by ID
+      operationId: getUserById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the user to retrieve
+      responses:
+        '200':
+          description: The user information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+      tags:
+        - users
+    put:
+      summary: Update a user by ID
+      operationId: updateUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the user to update
+      requestBody:
+        description: User object with updated information
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDTO'
+      responses:
+        '200':
+          description: The updated user information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+      tags:
+        - users
+    delete:
+      summary: Delete a user by ID
+      operationId: deleteUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the user to delete
+      responses:
+        '202':
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+      tags:
+        - users
+
 components:
-  schemas: {}
+  schemas:
+    UserDTO:
+      type: object
+      properties:
+        username:
+          type: string
+          description: Name of the user
+        email:
+          type: string
+          format: email
+          description: user email
+        password:
+          type: string
+          format: password
+          description: user password
+        lastTimeChecked:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{9}$
+          example: "2024-09-16T16:03:15.640532400"
+          description: The last time the user checked for a card
+
+    AnimeCardDTO:
+      type: object
+      properties:
+        id:
+          type: string
+          description: UUID of the anime card
+        name:
+          type: string
+          description: Name of the anime character
+        character:
+          $ref: '#/components/schemas/CharacterDTO'
+
+    CharacterDTO:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the character
+        origin:
+          type: string
+          description: Origin game/series/comic... of the character
+        gender:
+          type: string
+          description: Character's gender, female or male
+        age:
+          type: integer
+          description: Character's age in years, -1 if it's Unknown
+        description:
+          type: string
+          description: Character's brief description
+
+    ApiResponse:
+      type: object
+      properties:
+        body:
+          type: object
+          description: The body of the response
+        errorMessage:
+          type: string
+          description: Any error message
+        cardAvailableAt:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{9}$
+          example: "2024-09-16T16:03:15.640532400"
+          description: The next time the user can check their card
