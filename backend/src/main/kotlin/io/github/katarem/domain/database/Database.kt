@@ -1,19 +1,14 @@
 package io.github.katarem.domain.database
 
-import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import io.github.katarem.domain.model.*
 import io.github.katarem.domain.utils.GSON
 import io.github.katarem.domain.utils.cardsListType
 import io.github.katarem.presentation.dto.UserDTO
 import io.github.katarem.service.security.Encryptor
-import io.github.katarem.service.utils.LocalDateTimeAdapter
 import io.ktor.server.application.*
-import kotlinx.datetime.LocalDateTime
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.io.FileInputStream
-import java.io.FileReader
 import java.io.InputStreamReader
 
 fun Application.prepareDatabase() {
@@ -100,8 +95,8 @@ fun toNotification(resultRow: ResultRow): Notification{
 fun toTrade(resultRow: ResultRow): Trade{
     return Trade(
         id = resultRow[TradeTable.id].value,
-        offeringUserId = resultRow[TradeTable.offeringUserId].value,
-        offeredUserId = resultRow[TradeTable.offeredUserId].value,
+        offeringUsername = resultRow[TradeTable.offeringUsername].value,
+        offeredUsername = resultRow[TradeTable.offeredUsername].value,
         offeringUserCards = GSON.fromJson(resultRow[TradeTable.offeringCards], cardsListType),
         offeredUserCards = GSON.fromJson(resultRow[TradeTable.offeredCards], cardsListType),
         createdAt = resultRow[TradeTable.createdAt],

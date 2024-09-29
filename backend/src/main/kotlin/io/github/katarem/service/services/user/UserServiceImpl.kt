@@ -43,6 +43,10 @@ class UserServiceImpl(
         return repository.getByUsername(username)?.let(Mapper::toDto)
     }
 
+    fun internalGetByUsername(username: String): UserDTO? {
+        return repository.getByUsername(username)?.let{ Mapper.toDto(it, true) }
+    }
+
     suspend fun changePassword(userDTO: UserDTO, newPassword: String): UserDTO? {
         return userDTO.password?.let {
             return@let authenticate(userDTO.username, it)?.let { user ->

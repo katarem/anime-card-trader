@@ -150,6 +150,12 @@ paths:
       operationId: generateCard
       security:
         - apiKeyAuth: []
+      parameters:
+        - name: user_name
+          in: query
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Card generated
@@ -159,6 +165,8 @@ paths:
                 $ref: '#/components/schemas/ApiResponse'
         '201':
           description: Card generation still on cooldown
+        '400':
+          description: There was no user with those credentials
       tags:
         - cards
   /api/cards:
@@ -236,6 +244,24 @@ paths:
           description: Card not found
       tags:
         - cards
+  /api/cards/from-user/{id}:
+    get:
+      summary: obtain user's cards by username
+      operationId: getCardsFromUser
+      parameters:
+        - name: id
+          description: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of user's cards
+        '404':
+          description: User not found
+      tags:
+        - cards
   /api/users:
     get:
       summary: Get all users (Admin only)
@@ -261,7 +287,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserDTO'
+              $ref: '#/components/schemas/BasicUserDTO'
       responses:
         '200':
           description: User authenticated
@@ -303,7 +329,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserDTO'
+              $ref: '#/components/schemas/BasicUserDTO'
       responses:
         '200':
           description: Password changed succesfully
@@ -327,7 +353,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserDTO'
+              $ref: '#/components/schemas/BasicUserDTO'
       responses:
         '200':
           description: Email changed succesfully
@@ -400,6 +426,102 @@ paths:
       tags:
         - users
 
+  /trades:
+    get:
+      summary: Obtain all trades
+      description: Returns all trades by users (ADMIN ONLY)
+      tags:
+        - trades
+      responses:
+        '200':
+          description: Trade list obtained succesfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  body:
+                    type: object
+                    schema:
+                      $ref: '#/components/schemas/ApiResponse'
+        '401':
+          description: Not Authorised Access
+        '500':
+          description: Server Internal Error
+    post:
+      summary: Insert new trade
+      description: Creates a new trade between two registered users
+      tags:
+        - trades
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InsertTradeDTO'
+      responses:
+        '200':
+          description: Trade created succesfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  body:
+                    $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: Trade already exists or error in request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  body:
+                    $ref: '#/components/schemas/ApiResponse'
+        '500':
+          description: Server Internal Error
+
+  /trades/{id}:
+    put:
+      summary: Update existent trade
+      description: Updates the existent trade by its ID
+      tags:
+        - trades
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del trade a actualizar
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InsertTradeDTO'
+      responses:
+        '200':
+          description: Trade's updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  body:
+                    $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: There wasn't any trade with id
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  body:
+                    $ref: '#/components/schemas/ApiResponse'
+        '500':
+          description: Server Internal Error
+
   /api/notification:
     get:
       summary: Get all notifications
@@ -415,6 +537,10 @@ paths:
                 $ref: '#/components/schemas/ApiResponse'
         '403':
           description: Unauthorized access (admin only)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
       tags:
         - notification
     post:
@@ -622,7 +748,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserDTO'
+              $ref: '#/components/schemas/BasicUserDTO'
       responses:
         '200':
           description: API key generated
@@ -769,6 +895,13 @@ components:
           type: string
         email:
           type: string
+    BasicUserDTO:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
     NotificationDTO:
       type: object
       properties:
@@ -788,6 +921,60 @@ components:
         - title
         - message
         - userId
+    TradeDTO:
+      type: object
+      properties:
+        offeringUserId:
+          type: integer
+          example: 123
+        offeredUserId:
+          type: integer
+          example: 456
+        offeringUserCards:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardDTO'
+        offeredUserCards:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardDTO'
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-01T10:00:00Z"
+        accepted:
+          type: boolean
+          example: true
+    InsertTradeDTO:
+      type: object
+      properties:
+        offeringUsername:
+          type: string
+          example: user1
+        offeredUsername:
+          type: string
+          example: user2
+        offeringUserCards:
+          type: array
+          items:
+            description: cardIds to trade
+            type: object
+            properties:
+              uuid:
+                type: string
+                example: 6f7a97e8-3967-4b2e-9c32-ddea462bc307
+
+        offeredUserCards:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardDTO'
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-01T10:00:00Z"
+        accepted:
+          type: boolean
+          example: true
     ApiResponse:
       type: object
       properties:

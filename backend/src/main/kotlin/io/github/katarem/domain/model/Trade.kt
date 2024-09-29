@@ -4,8 +4,8 @@ import kotlinx.datetime.LocalDateTime
 
 data class Trade(
     val id: Long,
-    val offeringUserId: Long,
-    val offeredUserId: Long,
+    val offeringUsername: String,
+    val offeredUsername: String,
     val offeringUserCards: List<Card>,
     val offeredUserCards: List<Card>,
     val createdAt: LocalDateTime,

@@ -32,7 +32,18 @@ class CardServiceImpl(
 
     override suspend fun update(uuid: String, card: CardDTO): CardDTO? {
        val cardEntity = Mapper.toEntity(card)
-        return cardRepository.updateCard(uuid, cardEntity)?.let{ map(it) }
+        return cardRepository.updateCard(uuid, cardEntity)?.let{ updated ->
+            card.attachedUser?.let { newUser ->
+                val userCards = newUser.cards!!.toMutableList()
+                val existentCard = userCards.firstOrNull { it.uuid == uuid }
+                existentCard?.let {
+                    val index = userCards.indexOf(it)
+                    userCards.removeAt(index)
+                }
+                userCards.add(card)
+                userService.update(newUser.id!!, newUser.copy(cards = userCards.toList()))
+            }
+            map(updated) }
     }
 
     override suspend fun delete(uuid: String): Int? {
@@ -55,7 +66,7 @@ class CardServiceImpl(
     }
 
     suspend fun generateCard(userDTO: UserDTO): CardDTO? {
-        return userService.getByUsername(userDTO.username)?.let { databaseUser ->
+        return userService.internalGetByUsername(userDTO.username)?.let { databaseUser ->
             val user = Mapper.toEntity(databaseUser)
             val obtainedCard = cardRepository.obtainCard()
             val cardDto = cardRepository.updateCard(obtainedCard.uuid, obtainedCard.copy(attachedUser = user))?.let(Mapper::toDto)
@@ -64,7 +75,8 @@ class CardServiceImpl(
                 val dtoWithCharacter = dto.copy(character = associatedCharacter, attachedUser = databaseUser)
                 val userNewCards = userDTO.cards?.let { it + dtoWithCharacter } ?: listOf(dtoWithCharacter)
                 val nextCardDate = obtainNextCardDate()
-                val updatedUser = userService.update(user.id, userDTO.copy(cards = userNewCards, nextCard = nextCardDate))
+                val updatedUser = Mapper.toDto(user, true)
+                userService.update(user.id, updatedUser.copy(nextCard = nextCardDate, cards = userNewCards))
                 dtoWithCharacter
             }
         }

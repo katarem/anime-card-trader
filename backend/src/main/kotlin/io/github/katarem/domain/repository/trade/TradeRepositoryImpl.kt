@@ -27,8 +27,8 @@ class TradeRepositoryImpl : TradeRepository {
         if (exists(trade)) return null
         return transaction {
             val id = TradeTable.insertAndGetId {
-                it[offeredUserId] = trade.offeringUserId
-                it[offeredUserId] = trade.offeredUserId
+                it[offeredUsername] = trade.offeringUsername
+                it[offeredUsername] = trade.offeredUsername
                 it[offeringCards] = GSON.toJson(trade.offeringUserCards)
                 it[offeredCards] = GSON.toJson(trade.offeredUserCards)
                 it[createdAt] = trade.createdAt
@@ -42,8 +42,8 @@ class TradeRepositoryImpl : TradeRepository {
         if (!exists(id)) return null
         return transaction {
             TradeTable.update({ TradeTable.id eq id }) {
-                it[offeredUserId] = trade.offeringUserId
-                it[offeredUserId] = trade.offeredUserId
+                it[offeredUsername] = trade.offeringUsername
+                it[offeredUsername] = trade.offeredUsername
                 it[offeringCards] = GSON.toJson(trade.offeringUserCards)
                 it[offeredCards] = GSON.toJson(trade.offeredUserCards)
                 it[createdAt] = trade.createdAt
@@ -68,8 +68,8 @@ class TradeRepositoryImpl : TradeRepository {
     fun exists(trade: Trade): Boolean {
         return transaction {
             !TradeTable.selectAll().where {
-                (TradeTable.offeringUserId eq trade.offeringUserId) and
-                        (TradeTable.offeredUserId eq trade.offeredUserId) and
+                (TradeTable.offeringUsername eq trade.offeringUsername) and
+                        (TradeTable.offeredUsername eq trade.offeredUsername) and
                         (TradeTable.accepted.isNull())
             }.empty()
         }

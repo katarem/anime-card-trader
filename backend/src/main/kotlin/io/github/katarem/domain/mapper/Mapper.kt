@@ -3,8 +3,6 @@ package io.github.katarem.domain.mapper
 import io.github.katarem.domain.model.*
 import io.github.katarem.presentation.dto.*
 import io.github.katarem.presentation.now
-import io.github.katarem.presentation.obtainNextCardDate
-import kotlinx.datetime.LocalDateTime
 
 object Mapper {
     fun toDto(card: Card): CardDTO{
@@ -65,8 +63,8 @@ object Mapper {
     fun toDto(trade: Trade): TradeDTO {
         return TradeDTO(
             id = trade.id,
-            offeringUserId = trade.offeringUserId,
-            offeredUserId = trade.offeredUserId,
+            offeringUsername = trade.offeringUsername,
+            offeredUsername = trade.offeredUsername,
             offeringUserCards = trade.offeringUserCards.map(::toDto),
             offeredUserCards = trade.offeredUserCards.map(::toDto),
             createdAt = trade.createdAt,
@@ -122,8 +120,8 @@ object Mapper {
     fun toEntity(tradeDTO: TradeDTO): Trade {
         return Trade(
             id = tradeDTO.id,
-            offeringUserId = tradeDTO.offeringUserId,
-            offeredUserId = tradeDTO.offeredUserId,
+            offeringUsername = tradeDTO.offeringUsername,
+            offeredUsername = tradeDTO.offeredUsername,
             offeringUserCards = tradeDTO.offeringUserCards.map(::toEntity),
             offeredUserCards = tradeDTO.offeredUserCards.map(::toEntity),
             createdAt = tradeDTO.createdAt ?: now(),

@@ -3,12 +3,14 @@ package io.github.katarem.presentation.routing
 import io.github.katarem.domain.repository.card.CardRepositoryImpl
 import io.github.katarem.domain.repository.character.CharacterRepositoryImpl
 import io.github.katarem.domain.repository.notification.NotificationRepositoryImpl
+import io.github.katarem.domain.repository.trade.TradeRepositoryImpl
 import io.github.katarem.domain.repository.user.UserRepositoryImpl
 import io.github.katarem.service.notification.NotificationServiceImpl
 import io.github.katarem.service.services.auth.AuthService
 import io.github.katarem.service.services.cards.CardServiceImpl
 import io.github.katarem.service.services.character.CharacterServiceImpl
 import io.github.katarem.service.services.resource.ResourceService
+import io.github.katarem.service.services.trade.TradeServiceImpl
 import io.github.katarem.service.services.user.UserServiceImpl
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -26,6 +28,7 @@ fun Application.configureRouting() {
     val characterRepository = CharacterRepositoryImpl()
     val cardRepository = CardRepositoryImpl()
     val userRepository = UserRepositoryImpl()
+    val tradeRepository = TradeRepositoryImpl()
     val notificationRepository = NotificationRepositoryImpl()
 
     // services
@@ -34,6 +37,7 @@ fun Application.configureRouting() {
     val authService = AuthService(userService)
     val cardService = CardServiceImpl(cardRepository, characterService, userService)
     val notificationService = NotificationServiceImpl(notificationRepository)
+    val tradeService = TradeServiceImpl(tradeRepository, cardService)
     val resourceService = ResourceService()
 
     // Routes
@@ -41,6 +45,7 @@ fun Application.configureRouting() {
     cardsRoutes(cardService, authService)
     userRoutes(userService, authService)
     notificationRoutes(notificationService, userService, authService)
+    tradingRoutes(tradeService, authService)
     authRoutes(userService)
     resourceRoutes(resourceService)
 
