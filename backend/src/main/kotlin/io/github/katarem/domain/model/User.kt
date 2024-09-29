@@ -8,7 +8,7 @@ data class User(
     val email: String,
     val password: String,
     val cards: List<Card>,
-    val lastTimeChecked: LocalDateTime?,
+    val nextCard: LocalDateTime?,
     val role: Roles = Roles.USER
 )
 

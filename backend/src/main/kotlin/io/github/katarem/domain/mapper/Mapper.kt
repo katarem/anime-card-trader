@@ -1,11 +1,10 @@
 package io.github.katarem.domain.mapper
 
-import io.github.katarem.domain.model.Card
-import io.github.katarem.domain.model.Character
-import io.github.katarem.domain.model.User
-import io.github.katarem.presentation.dto.CardDTO
-import io.github.katarem.presentation.dto.CharacterDTO
-import io.github.katarem.presentation.dto.UserDTO
+import io.github.katarem.domain.model.*
+import io.github.katarem.presentation.dto.*
+import io.github.katarem.presentation.now
+import io.github.katarem.presentation.obtainNextCardDate
+import kotlinx.datetime.LocalDateTime
 
 object Mapper {
     fun toDto(card: Card): CardDTO{
@@ -13,7 +12,7 @@ object Mapper {
             id = card.id,
             uuid = card.uuid,
             character = CharacterDTO(
-                id = 0,
+                id = card.characterId,
                 name = "Derek Stafford",
                 anime = "persecuti",
                 gender = "suspendisse",
@@ -23,7 +22,7 @@ object Mapper {
             ),
             obtainedDate = card.obtainedDate,
             attachedUser = UserDTO(
-                id = null, username = "Coy Ayala", email = null, password = null, cards = listOf(), lastTimeChecked = null
+                id = null, username = "Coy Ayala", email = null, password = null, cards = listOf(), nextCard = null
             )
         )
     }
@@ -41,14 +40,38 @@ object Mapper {
         )
     }
 
-    fun toDto(user: User): UserDTO{
+    fun toDto(user: User, includeSensible: Boolean = false): UserDTO{
         return UserDTO(
             id = user.id,
             username = user.username,
-            email = user.email,
-            password = null, // to not leak
+            email = if(includeSensible) user.email else null,
+            password = if(includeSensible) user.password else null,
             cards = user.cards.map(Mapper::toDto),
-            lastTimeChecked = user.lastTimeChecked,
+            nextCard = user.nextCard,
+        )
+    }
+
+    fun toDto(notification: Notification): NotificationDTO {
+        return NotificationDTO(
+            id = notification.id,
+            userId = notification.userId,
+            title = notification.title,
+            createdAt = notification.createdAt,
+            content = notification.content,
+            read = notification.read
+        )
+    }
+
+    fun toDto(trade: Trade): TradeDTO {
+        return TradeDTO(
+            id = trade.id,
+            offeringUserId = trade.offeringUserId,
+            offeredUserId = trade.offeredUserId,
+            offeringUserCards = trade.offeringUserCards.map(::toDto),
+            offeredUserCards = trade.offeredUserCards.map(::toDto),
+            createdAt = trade.createdAt,
+            accepted = trade.accepted
+
         )
     }
 
@@ -71,7 +94,7 @@ object Mapper {
             email = userDTO.email.orEmpty(),
             password = userDTO.password.orEmpty(),
             cards = listOf(),
-            lastTimeChecked = userDTO.lastTimeChecked
+            nextCard = userDTO.nextCard
         )
     }
 
@@ -82,6 +105,29 @@ object Mapper {
             characterId = cardDTO.character.id,
             obtainedDate = cardDTO.obtainedDate,
             attachedUser = cardDTO.attachedUser?.let { toEntity(it) }
+        )
+    }
+
+    fun toEntity(notificationDTO: NotificationDTO): Notification{
+        return Notification(
+            id = notificationDTO.id,
+            userId = notificationDTO.userId,
+            title = notificationDTO.title,
+            content = notificationDTO.content,
+            createdAt = notificationDTO.createdAt?: now(),
+            read = notificationDTO.read
+        )
+    }
+
+    fun toEntity(tradeDTO: TradeDTO): Trade {
+        return Trade(
+            id = tradeDTO.id,
+            offeringUserId = tradeDTO.offeringUserId,
+            offeredUserId = tradeDTO.offeredUserId,
+            offeringUserCards = tradeDTO.offeringUserCards.map(::toEntity),
+            offeredUserCards = tradeDTO.offeredUserCards.map(::toEntity),
+            createdAt = tradeDTO.createdAt ?: now(),
+            accepted = null
         )
     }
 }

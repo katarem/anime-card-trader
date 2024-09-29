@@ -1,162 +1,23 @@
 openapi: 3.0.0
 info:
-  title: Anime Cards API
-  description: API for managing anime cards and checking their availability.
+  title: Katarem API
+  description: API for managing characters, cards, and users in the Katarem system.
   version: 1.0.0
 servers:
   - url: http://localhost:8080
-    description: Local server
+    description: Local development server
+  - url: http://51.68.220.115:8080/
+    description: Production server
 
 paths:
-  /cards/debug:
-    get:
-      summary: Get debug information of the server time
-      description: Returns the server time adjusted by the number of hours specified in the query parameter.
-      parameters:
-        - in: query
-          name: hours
-          schema:
-            type: integer
-          required: false
-          description: Number of hours to subtract from the current time
-      responses:
-        200:
-          description: Server time adjusted by the specified hours
-          content:
-            application/json:
-              schema:
-                type: string
-                format: date-time
-        400:
-          description: Bad request if the hours parameter is invalid
-      tags:
-        - cards
-  /cards/check:
-    post:
-      summary: Check card availability for a user
-      description: Checks whether a user can request a new card based on the last check time.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserDTO'
-      responses:
-        200:
-          description: Card availability response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiResponse'
-      tags:
-        - cards
-  /cards:
-    get:
-      summary: Get all anime cards
-      description: Retrieves a list of all anime cards.
-      responses:
-        200:
-          description: A list of anime cards
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/AnimeCardDTO'
-      tags:
-        - cards
-    post:
-      summary: Add a new anime card
-      description: Adds a new anime card to the system.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AnimeCardDTO'
-      responses:
-        200:
-          description: The newly added anime card
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AnimeCardDTO'
-        409:
-          description: Conflict if the card could not be added
-      tags:
-        - cards
-  /cards/{id}:
-    get:
-      summary: Get an anime card by ID
-      description: Retrieves a specific anime card by its ID.
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: UUID of the anime card
-      responses:
-        200:
-          description: The anime card details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AnimeCardDTO'
-        404:
-          description: Not found if the card doesn't exist
-      tags:
-        - cards
-    put:
-      summary: Update an existing anime card
-      description: Updates the details of an anime card with the given ID.
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: UUID of the anime card to update
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AnimeCardDTO'
-      responses:
-        200:
-          description: The updated anime card
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AnimeCardDTO'
-        404:
-          description: Not found if the card doesn't exist
-      tags:
-        - cards
-    delete:
-      summary: Delete an anime card
-      description: Deletes the anime card with the given ID.
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: UUID of the anime card
-      responses:
-        202:
-          description: Accepted if the card was deleted
-        400:
-          description: Bad request if the card could not be deleted
-      tags:
-        - cards
-  /character/create:
+  /api/character/create:
     post:
       summary: Create multiple characters
       operationId: createCharacters
+      security:
+        - apiKeyAuth: []
       requestBody:
-        description: List of characters to be created
+        description: List of characters to create
         required: true
         content:
           application/json:
@@ -172,88 +33,54 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiResponse'
         '400':
-          description: One or more characters already exist
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiResponse'
+          description: Bad request. One or more characters already exist.
       tags:
-        - characters
-
-  /character/search:
+        - character
+  /api/character/search:
     get:
-      summary: Search characters based on filters
+      summary: Search for characters
       operationId: searchCharacters
       parameters:
         - name: name
           in: query
+          required: false
           schema:
             type: string
-          description: Filter by character name
         - name: origin
           in: query
+          required: false
           schema:
             type: string
-          description: Filter by character origin
         - name: gender
           in: query
+          required: false
           schema:
             type: string
-          description: Filter by character gender
       responses:
         '200':
-          description: List of characters that match the filters
+          description: Characters found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponse'
         '404':
-          description: No characters found with specified filters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiResponse'
+          description: No characters found with the specified filters
       tags:
-        - characters
-  /character:
+        - character
+  /api/character:
     get:
       summary: Get all characters
       operationId: getAllCharacters
       responses:
         '200':
-          description: List of all characters
+          description: A list of all characters
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponse'
       tags:
-        - characters
-    post:
-      summary: Create a new character
-      operationId: createCharacter
-      requestBody:
-        description: Character to be created
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CharacterDTO'
-      responses:
-        '202':
-          description: Character created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CharacterDTO'
-        '409':
-          description: Character already exists
-          content:
-            application/json:
-              schema:
-                type: string
-      tags:
-        - characters
-  /character/{id}:
+        - character
+  /api/character/{id}:
     get:
       summary: Get character by ID
       operationId: getCharacterById
@@ -263,34 +90,30 @@ paths:
           required: true
           schema:
             type: string
-          description: The ID of the character to retrieve
       responses:
         '200':
-          description: Character found by ID
+          description: Character found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CharacterDTO'
         '404':
           description: Character not found
-          content:
-            application/json:
-              schema:
-                type: string
       tags:
-        - characters
+        - character
     put:
       summary: Update character by ID
-      operationId: updateCharacter
+      operationId: updateCharacterById
+      security:
+        - apiKeyAuth: []
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
-          description: The ID of the character to update
       requestBody:
-        description: Character object with updated information
+        description: Character object to update
         required: true
         content:
           application/json:
@@ -299,62 +122,141 @@ paths:
       responses:
         '200':
           description: Character updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CharacterDTO'
         '404':
           description: Character not found
-          content:
-            application/json:
-              schema:
-                type: string
       tags:
-        - characters
+        - character
     delete:
       summary: Delete character by ID
-      operationId: deleteCharacter
+      operationId: deleteCharacterById
+      security:
+        - apiKeyAuth: []
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
-          description: The ID of the character to delete
       responses:
         '202':
           description: Character deleted successfully
+        '404':
+          description: Character not found
+      tags:
+        - character
+  /api/cards/generate:
+    post:
+      summary: Generate a new card for the user
+      operationId: generateCard
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200':
+          description: Card generated
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponse'
-        '404':
-          description: Character not found
+        '201':
+          description: Card generation still on cooldown
+      tags:
+        - cards
+  /api/cards:
+    get:
+      summary: Get all cards
+      operationId: getAllCards
+      responses:
+        '200':
+          description: List of all cards
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponse'
       tags:
-        - characters
-
-  /users:
+        - cards
+  /api/cards/{id}:
     get:
-      summary: Get all users
-      operationId: getAllUsers
+      summary: Get card by ID
+      operationId: getCardById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
-          description: A list of users
+          description: Card found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDTO'
+        '404':
+          description: Card not found
+      tags:
+        - cards
+    put:
+      summary: Update card by ID
+      operationId: updateCardById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Card object to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardDTO'
+      responses:
+        '200':
+          description: Card updated successfully
+        '404':
+          description: Card not found
+      tags:
+        - cards
+    delete:
+      summary: Delete card by ID
+      operationId: deleteCardById
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: Card deleted successfully
+        '404':
+          description: Card not found
+      tags:
+        - cards
+  /api/users:
+    get:
+      summary: Get all users (Admin only)
+      operationId: getAllUsers
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200':
+          description: List of all users
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponse'
       tags:
         - users
+  /api/users/login:
     post:
-      summary: Create a new user
-      operationId: createUser
+      summary: Login user
+      operationId: loginUser
       requestBody:
-        description: User object that needs to be added
+        description: User credentials for login
         required: true
         content:
           application/json:
@@ -362,53 +264,360 @@ paths:
               $ref: '#/components/schemas/UserDTO'
       responses:
         '200':
-          description: The created user
+          description: User authenticated
+        '400':
+          description: Invalid credentials
+      tags:
+        - users
+  /api/users/register:
+    post:
+      summary: Register a new user
+      operationId: registerUser
+      requestBody:
+        description: User data for registration
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDTO'
+      responses:
+        '200':
+          description: User registered successfully
+        '400':
+          description: User already exists or invalid input
+      tags:
+        - users
+  /api/users/change-password:
+    patch:
+      summary: Change existent user's password
+      operationId: userUpdatePassword
+      parameters:
+        - name: X-NEW-USER-PASSWORD
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: User data for changing the password
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDTO'
+      responses:
+        '200':
+          description: Password changed succesfully
+        '400':
+          description: New password is empty or the user credentials are invalid
+      tags:
+        - users
+  /api/users/change-email:
+    patch:
+      summary: Change existent user's email
+      operationId: userUpdateEmail
+      parameters:
+        - name: X-NEW-USER-EMAIL
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: User data for changing the email
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDTO'
+      responses:
+        '200':
+          description: Email changed succesfully
+        '400':
+          description: New email is empty or the user credentials are invalid
+      tags:
+        - users
+  /api/users/{id}:
+    get:
+      summary: Get user by ID (Admin only)
+      operationId: getUserById
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDTO'
+        '404':
+          description: User not found
+      tags:
+        - users
+    put:
+      summary: Update user by ID
+      operationId: updateUserById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: User object to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDTO'
+      responses:
+        '200':
+          description: User updated successfully
+        '404':
+          description: User not found
+      tags:
+        - users
+    delete:
+      summary: Delete user by ID (Admin only)
+      operationId: deleteUserById
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: User deleted successfully
+        '404':
+          description: User not found
+      tags:
+        - users
+
+  /api/notification:
+    get:
+      summary: Get all notifications
+      operationId: getAllNotifications
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200':
+          description: List of all notifications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '403':
+          description: Unauthorized access (admin only)
+      tags:
+        - notification
+    post:
+      summary: Create a new notification
+      operationId: createNotification
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        description: Notification data to be created
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationDTO'
+      responses:
+        '200':
+          description: Notification created successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponse'
         '400':
-          description: Invalid input
+          description: Notification already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
       tags:
-        - users
-  /users/{id}:
+        - notification
+  /api/notification/user/{id}:
     get:
-      summary: Get a user by ID
-      operationId: getUserById
+      summary: Get user notifications by user ID
+      operationId: getUserNotifications
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
-          description: The ID of the user to retrieve
+          description: The ID of the user
       responses:
         '200':
-          description: The user information
+          description: List of notifications for the specified user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: Invalid user ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+      tags:
+        - notification
+
+  /api/notification/{id}:
+    get:
+      summary: Get notification by ID
+      operationId: getNotificationById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the notification
+      responses:
+        '200':
+          description: Notification found by ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: Notification not found or invalid ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+      tags:
+        - notification
+    put:
+      summary: Update a notification by ID
+      operationId: updateNotification
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the notification to update
+      requestBody:
+        description: Notification data with updated values
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationDTO'
+      responses:
+        '200':
+          description: Notification updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: Notification not found or invalid ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+      tags:
+        - notification
+    delete:
+      summary: Delete a notification by ID
+      operationId: deleteNotification
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the notification to delete
+      responses:
+        '200':
+          description: Notification deleted successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponse'
         '404':
-          description: User not found
+          description: Notification not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponse'
       tags:
-        - users
-    put:
-      summary: Update a user by ID
-      operationId: updateUser
+        - notification
+    patch:
+      summary: Mark a notification as read by ID
+      operationId: readNotification
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
-          description: The ID of the user to update
+          description: The ID of the notification to mark as read
+      responses:
+        '200':
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '404':
+          description: Notification not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+      tags:
+        - notification
+  /api/notification/broadcast:
+    post:
+      summary: Broadcast a notification to all users
+      operationId: broadcastNotification
+      security:
+        - apiKeyAuth: []
       requestBody:
-        description: User object with updated information
+        description: Notification data to be broadcasted
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationDTO'
+      responses:
+        '200':
+          description: Notification broadcasted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '404':
+          description: Error creating one or more notifications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+      tags:
+        - notification
+
+  /auth/gen-key:
+    post:
+      summary: Generate API key for user (Admin only)
+      operationId: generateApiKey
+      requestBody:
+        description: User credentials to generate API key
         required: true
         content:
           application/json:
@@ -416,109 +625,182 @@ paths:
               $ref: '#/components/schemas/UserDTO'
       responses:
         '200':
-          description: The updated user information
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiResponse'
-        '404':
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiResponse'
+          description: API key generated
+        '401':
+          description: Unauthorized access
       tags:
-        - users
-    delete:
-      summary: Delete a user by ID
-      operationId: deleteUser
+        - auth
+
+  /files/upload/profile:
+    post:
+      summary: Upload a profile photo
+      operationId: uploadProfilePhoto
+      requestBody:
+        description: Profile photo to be uploaded
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The profile photo file
+      responses:
+        '200':
+          description: File uploaded successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: File uploaded successfully!
+        '400':
+          description: Bad request if the file couldn't be read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          description: Internal server error if failed to save file
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Failed to save file.
+      tags:
+        - resources
+
+  /files/upload/cards:
+    post:
+      summary: Upload a card photo
+      operationId: uploadCardPhoto
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        description: Card photo to be uploaded
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The card photo file
+      responses:
+        '200':
+          description: File uploaded successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: File uploaded successfully!
+        '400':
+          description: Bad request if the file couldn't be read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          description: Internal server error if failed to save file
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Failed to save file.
+      tags:
+        - resources
+  /files/res/{folder}/{file}:
+    get:
+      summary: Get photo from the backend
+      operationId: getImage
       parameters:
-        - name: id
+        - name: folder
           in: path
           required: true
           schema:
             type: string
-          description: The ID of the user to delete
+        - name: file
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
-        '202':
-          description: User deleted successfully
+        '200':
+          description: The image
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiResponse'
+            image:
         '404':
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiResponse'
+          description: File not found
       tags:
-        - users
-
+        - resources
 components:
   schemas:
-    UserDTO:
-      type: object
-      properties:
-        username:
-          type: string
-          description: Name of the user
-        email:
-          type: string
-          format: email
-          description: user email
-        password:
-          type: string
-          format: password
-          description: user password
-        lastTimeChecked:
-          type: string
-          pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{9}$
-          example: "2024-09-16T16:03:15.640532400"
-          description: The last time the user checked for a card
-
-    AnimeCardDTO:
+    CharacterDTO:
       type: object
       properties:
         id:
           type: string
-          description: UUID of the anime card
         name:
           type: string
-          description: Name of the anime character
-        character:
-          $ref: '#/components/schemas/CharacterDTO'
-
-    CharacterDTO:
-      type: object
-      properties:
-        name:
-          type: string
-          description: Name of the character
         origin:
           type: string
-          description: Origin game/series/comic... of the character
         gender:
           type: string
-          description: Character's gender, female or male
-        age:
-          type: integer
-          description: Character's age in years, -1 if it's Unknown
-        description:
+    CardDTO:
+      type: object
+      properties:
+        uuid:
           type: string
-          description: Character's brief description
-
+        type:
+          type: string
+        value:
+          type: integer
+    UserDTO:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+        email:
+          type: string
+    NotificationDTO:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Notification identifier
+        title:
+          type: string
+          description: Title of the notification
+        message:
+          type: string
+          description: Content of the notification
+        userId:
+          type: string
+          description: User ID associated with the notification
+      required:
+        - title
+        - message
+        - userId
     ApiResponse:
       type: object
       properties:
         body:
           type: object
-          description: The body of the response
         errorMessage:
           type: string
-          description: Any error message
         cardAvailableAt:
           type: string
-          pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{9}$
-          example: "2024-09-16T16:03:15.640532400"
-          description: The next time the user can check their card
+          format: date-time
+
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY

@@ -1,104 +1,126 @@
 package io.github.katarem.presentation.routing
 
-import io.github.katarem.domain.response.ApiResponse
+import io.github.katarem.presentation.response.ApiResponse
 import io.github.katarem.domain.utils.extractUUID
+import io.github.katarem.domain.utils.extractUsername
+import io.github.katarem.presentation.cooldownFinished
 import io.github.katarem.presentation.dto.CardDTO
-import io.github.katarem.presentation.dto.UserDTO
-import io.github.katarem.service.CardServiceImpl
-import io.github.katarem.service.utils.checkIfCardAvailable
+import io.github.katarem.presentation.obtainNextCardDate
+import io.github.katarem.service.services.auth.AuthService
+import io.github.katarem.service.services.cards.CardServiceImpl
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.*
-import kotlin.time.Duration.Companion.hours
 
-fun Application.cardsRoutes() {
-
-    val service = CardServiceImpl()
-
+fun Application.cardsRoutes(
+    service: CardServiceImpl,
+    authService: AuthService
+) {
     routing {
+        route("api") {
 
-        // DEBUG ONLY
-        get("/cards/debug") {
-            val hours = call.queryParameters["hours"]?.toIntOrNull()
-            hours?.let {
-                val now = Clock.System.now().toLocalDateTime(timeZone = TimeZone.currentSystemDefault())
-                val instant = now.toInstant(TimeZone.currentSystemDefault())
-                val time = (instant - it.hours).toLocalDateTime(TimeZone.currentSystemDefault())
-                call.respond(HttpStatusCode.OK, time)
-            } ?: call.respond(HttpStatusCode.BadRequest)
-        }
-
-        post<UserDTO>("/cards/check") {
-            val now = Clock.System.now().toLocalDateTime(timeZone = TimeZone.currentSystemDefault())
-            it.lastTimeChecked?.let { last ->
-                val response = checkIfCardAvailable(last, now)
-                call.respond(HttpStatusCode.OK, response)
-            } ?: call.respond(
-                HttpStatusCode.OK, ApiResponse<String>(
-                    body = "You can check your card now",
-                    cardAvailableAt = (now.toInstant(TimeZone.currentSystemDefault()) + 8.hours).toLocalDateTime(
-                        TimeZone.currentSystemDefault()
-                    )
-                )
-            )
-        }
-        get("/cards") {
-            val all = service.getAll()
-            call.respond(
-                HttpStatusCode.OK, ApiResponse(
-                    body = all
-                )
-            )
-        }
-        get("/cards/{id}") {
-            extractUUID(call)?.let { uuid ->
-                service.getById(uuid)?.let { card ->
-                    call.respond(
-                        HttpStatusCode.OK, ApiResponse(
-                            body = card
+            post("/cards/generate") {
+                authService.checkIfUserExists(call)?.let { user ->
+                    if (user.nextCard == null) {
+                        val generated = service.generateCard(user)
+                        call.respond(
+                            HttpStatusCode.OK, ApiResponse(
+                                body = generated,
+                                cardAvailableAt = obtainNextCardDate()
+                            )
                         )
-                    )
-                } ?: call.respond(
-                    HttpStatusCode.NotFound, ApiResponse<String>(
-                        errorMessage = "Card with uuid=$uuid wasn't found"
+                    } else {
+                        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                        if(cooldownFinished(now, user.nextCard)){
+                            val generated = service.generateCard(user)
+                            call.respond(
+                                HttpStatusCode.OK, ApiResponse(
+                                    body = generated,
+                                    cardAvailableAt = obtainNextCardDate()
+                                )
+                            )
+                        } else {
+                            call.respond(HttpStatusCode.Accepted, ApiResponse<String>(
+                                errorMessage = "Card generation is still on cooldown!",
+                                cardAvailableAt = user.nextCard
+                            ))
+                        }
+                    }
+                }
+            }
+            get("/cards") {
+                val all = service.getAll()
+                call.respond(
+                    HttpStatusCode.OK, ApiResponse(
+                        body = all
                     )
                 )
             }
-        }
-
-        put<CardDTO>("/cards/{id}") {
-            extractUUID(call)?.let { uuid ->
-                service.update(uuid, it)?.let { updated ->
-                    call.respond(
-                        HttpStatusCode.OK, ApiResponse(
-                            body = updated
+            get("/cards/{id}") {
+                extractUUID(call)?.let { uuid ->
+                    service.getById(uuid)?.let { card ->
+                        call.respond(
+                            HttpStatusCode.OK, ApiResponse(
+                                body = card
+                            )
+                        )
+                    } ?: call.respond(
+                        HttpStatusCode.NotFound, ApiResponse<String>(
+                            errorMessage = "Card with uuid=$uuid wasn't found"
                         )
                     )
-                } ?: call.respond(
-                    HttpStatusCode.NotFound, ApiResponse<String>(
-                        errorMessage = "Card with uuid=$uuid wasn't found"
-                    )
-                )
+                }
             }
-        }
-        delete("/cards/{id}") {
-            extractUUID(call)?.let { uuid ->
-                service.delete(uuid)?.let {
-                    call.respond(
-                        HttpStatusCode.Accepted, ApiResponse(
-                            body = "Character with uuid=$uuid deleted"
+
+            put<CardDTO>("/cards/{id}") {
+                extractUUID(call)?.let { uuid ->
+                    service.update(uuid, it)?.let { updated ->
+                        call.respond(
+                            HttpStatusCode.OK, ApiResponse(
+                                body = updated
+                            )
+                        )
+                    } ?: call.respond(
+                        HttpStatusCode.NotFound, ApiResponse<String>(
+                            errorMessage = "Card with uuid=$uuid wasn't found"
                         )
                     )
-                } ?: call.respond(
-                    HttpStatusCode.NotFound, ApiResponse<String>(
-                        errorMessage = "Character with uuid=$uuid wasn't found"
-                    )
-                )
+                }
+            }
+            delete("/cards/{id}") {
+                authService.adminAccessEndpoint(call)?.run {
+                    extractUUID(call)?.let { uuid ->
+                        service.delete(uuid)?.let {
+                            call.respond(
+                                HttpStatusCode.Accepted, ApiResponse(
+                                    body = "Character with uuid=$uuid deleted"
+                                )
+                            )
+                        } ?: call.respond(
+                            HttpStatusCode.NotFound, ApiResponse<String>(
+                                errorMessage = "Character with uuid=$uuid wasn't found"
+                            )
+                        )
+                    }
+                }
+
+            }
+            get("/cards/from-user/{id}") {
+                extractUsername(call)?.let { username ->
+                    val cards = service.getByUsername(username)
+                    cards?.let {
+                        call.respond(
+                            HttpStatusCode.OK, ApiResponse(
+                                body = it
+                            )
+                        )
+                    } ?: call.respond(HttpStatusCode.NotFound, ApiResponse<String>(
+                        errorMessage = "No user with username=$username was found"
+                    ))
+                }
             }
         }
     }
-
-
 }

@@ -8,5 +8,6 @@ data class UserDTO(
     val email: String?,
     val password: String?,
     val cards: List<CardDTO>? = emptyList(),
-    val lastTimeChecked: LocalDateTime?
+    val role: String? = "USER",
+    val nextCard: LocalDateTime?
 )

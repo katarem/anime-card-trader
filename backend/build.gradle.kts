@@ -3,6 +3,9 @@ val logback_version: String by project
 val exposedVersion: String by project
 val jdbcVersion: String by project
 val generatorVersion: String by project
+val swaggerGeneratorVersion: String by project
+val bcrypt: String by project
+
 plugins {
     kotlin("jvm") version "2.0.20"
     id("io.ktor.plugin") version "3.0.0-rc-1"
@@ -49,6 +52,10 @@ dependencies {
 
     implementation("io.ktor:ktor-server-swagger-jvm")
     implementation("io.ktor:ktor-server-openapi")
+    implementation("io.swagger.codegen.v3:swagger-codegen-generators:$swaggerGeneratorVersion")
+
+    implementation("org.mindrot:jbcrypt:$bcrypt")
+
 
     implementation("io.ktor:ktor-server-cors-jvm")
     implementation("io.ktor:ktor-server-netty-jvm")

@@ -1,37 +1,55 @@
 package io.github.katarem.domain.database
 
-import io.github.katarem.domain.model.Card
-import io.github.katarem.domain.model.Character
-import io.github.katarem.domain.model.User
+import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
+import io.github.katarem.domain.model.*
+import io.github.katarem.domain.utils.GSON
+import io.github.katarem.domain.utils.cardsListType
+import io.github.katarem.presentation.dto.UserDTO
+import io.github.katarem.service.security.Encryptor
+import io.github.katarem.service.utils.LocalDateTimeAdapter
 import io.ktor.server.application.*
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.selectAll
+import kotlinx.datetime.LocalDateTime
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.io.File
+import java.io.FileInputStream
+import java.io.FileReader
+import java.io.InputStreamReader
 
-fun Application.prepareDatabase(){
+fun Application.prepareDatabase() {
     Database.connect(url = "jdbc:sqlite:test.db")
     transaction {
         SchemaUtils.createMissingTablesAndColumns(
             CardTable,
             CharacterTable,
-            UserTable
+            UserTable,
+            NotificationTable,
+            TradeTable
         )
     }
-    //transaction {
-    //    val isEmpty = CharacterTable.selectAll().empty()
-    //    if(isEmpty){
-    //        val sqlFile = File(ClassLoader.getSystemResource("import.sql").file)
-    //        val sqlStatements = sqlFile.readText().split(";")
-    //        sqlStatements.forEach { statement ->
-    //            if(statement.trim().isNotEmpty()){
-    //                exec(statement.trim())
-    //            }
-    //        }
-    //    }
-    //}
+    try{
+        transaction {
+            val isEmpty = UserTable.selectAll().empty()
+            if(isEmpty){
+
+                val path = ClassLoader.getSystemResourceAsStream("test-users.json")
+                path?.let { InputStreamReader(it) }?.use { reader ->
+                    val userListType = object : TypeToken<List<UserDTO>>() {}.type
+                    val users = GSON.fromJson<List<UserDTO>>(reader, userListType)
+                    users.forEach { user ->
+                        UserTable.insert {
+                            it[username] = user.username
+                            it[email] = user.email?:""
+                            it[password] = Encryptor.encryptPassword(user.password?:"hola")
+                            it[role] = user.role?:Roles.USER.name
+                        }
+                    }
+                }
+            }
+        }
+    } catch (_: Exception){
+        // ignored
+    }
 }
 
 fun toUser(resultRow: ResultRow): User {
@@ -41,7 +59,8 @@ fun toUser(resultRow: ResultRow): User {
         email = resultRow[UserTable.email],
         password = resultRow[UserTable.password],
         cards = listOf(),
-        lastTimeChecked = resultRow[UserTable.lastTimeChecked]
+        role = Roles.valueOf(resultRow[UserTable.role]),
+        nextCard = resultRow[UserTable.nextCard]
     )
 }
 
@@ -64,5 +83,28 @@ fun toCard(resultRow: ResultRow): Card {
         characterId = resultRow[CardTable.character].value,
         obtainedDate = resultRow[CardTable.obtainedDate],
         attachedUser = null
+    )
+}
+
+fun toNotification(resultRow: ResultRow): Notification{
+    return Notification(
+        id = resultRow[NotificationTable.id].value,
+        userId = resultRow[NotificationTable.userId].value,
+        title = resultRow[NotificationTable.title],
+        content = resultRow[NotificationTable.content],
+        createdAt = resultRow[NotificationTable.createDate],
+        read = resultRow[NotificationTable.read]
+    )
+}
+
+fun toTrade(resultRow: ResultRow): Trade{
+    return Trade(
+        id = resultRow[TradeTable.id].value,
+        offeringUserId = resultRow[TradeTable.offeringUserId].value,
+        offeredUserId = resultRow[TradeTable.offeredUserId].value,
+        offeringUserCards = GSON.fromJson(resultRow[TradeTable.offeringCards], cardsListType),
+        offeredUserCards = GSON.fromJson(resultRow[TradeTable.offeredCards], cardsListType),
+        createdAt = resultRow[TradeTable.createdAt],
+        accepted = resultRow[TradeTable.accepted]
     )
 }

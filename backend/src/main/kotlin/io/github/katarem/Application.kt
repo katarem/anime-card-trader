@@ -13,6 +13,6 @@ fun main(args: Array<String>) {
 fun Application.module() {
     prepareDatabase()
     configureSerialization()
-    configureHTTP()
     configureRouting()
+    configureHTTP()
 }

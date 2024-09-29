@@ -1,12 +1,19 @@
 package io.github.katarem.presentation.routing
 
+import io.github.katarem.domain.repository.card.CardRepositoryImpl
+import io.github.katarem.domain.repository.character.CharacterRepositoryImpl
+import io.github.katarem.domain.repository.notification.NotificationRepositoryImpl
+import io.github.katarem.domain.repository.user.UserRepositoryImpl
+import io.github.katarem.service.notification.NotificationServiceImpl
+import io.github.katarem.service.services.auth.AuthService
+import io.github.katarem.service.services.cards.CardServiceImpl
+import io.github.katarem.service.services.character.CharacterServiceImpl
+import io.github.katarem.service.services.resource.ResourceService
+import io.github.katarem.service.services.user.UserServiceImpl
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.http.content.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
-import io.ktor.server.routing.*
-import java.io.File
 
 fun Application.configureRouting() {
     install(StatusPages) {
@@ -14,12 +21,27 @@ fun Application.configureRouting() {
             call.respondText(text = "500: $cause" , status = HttpStatusCode.InternalServerError)
         }
     }
-    // Routes
-    characterRoute()
-    cardsRoutes()
-    userRoutes()
 
-    routing {
-        staticFiles("/files", File("./files"))
-    }
+    //repositories
+    val characterRepository = CharacterRepositoryImpl()
+    val cardRepository = CardRepositoryImpl()
+    val userRepository = UserRepositoryImpl()
+    val notificationRepository = NotificationRepositoryImpl()
+
+    // services
+    val characterService = CharacterServiceImpl(characterRepository)
+    val userService = UserServiceImpl(userRepository)
+    val authService = AuthService(userService)
+    val cardService = CardServiceImpl(cardRepository, characterService, userService)
+    val notificationService = NotificationServiceImpl(notificationRepository)
+    val resourceService = ResourceService()
+
+    // Routes
+    characterRoute(characterService, authService)
+    cardsRoutes(cardService, authService)
+    userRoutes(userService, authService)
+    notificationRoutes(notificationService, userService, authService)
+    authRoutes(userService)
+    resourceRoutes(resourceService)
+
 }

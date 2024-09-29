@@ -1,11 +1,27 @@
 package io.github.katarem.domain.utils
 
-import io.github.katarem.domain.response.ApiResponse
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
+import io.github.katarem.domain.model.Card
+import io.github.katarem.presentation.dto.CardDTO
+import io.github.katarem.presentation.response.ApiResponse
 import io.github.katarem.presentation.dto.CharacterFilters
+import io.github.katarem.presentation.dto.UserDTO
+import io.github.katarem.service.utils.LocalDateTimeAdapter
 import io.ktor.http.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import org.jetbrains.exposed.crypt.Algorithms
+import kotlinx.datetime.LocalDateTime
+import java.lang.reflect.Type
+import java.security.SecureRandom
+
+val GSON: Gson = GsonBuilder()
+    .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeAdapter())
+    .create()
+
+val userListType: Type = object : TypeToken<List<UserDTO>>() {}.type
+val cardsListType: Type = object : TypeToken<List<Card>>() {}.type
 
 suspend fun extractId(call: RoutingCall): Long?{
     return try {
@@ -14,7 +30,32 @@ suspend fun extractId(call: RoutingCall): Long?{
         call.respond(
             HttpStatusCode.BadRequest, ApiResponse<String>(
             errorMessage = "Invalid id"
-        ))
+        )
+        )
+        null
+    }
+}
+suspend fun extractQueryUsername(call: RoutingCall): String?{
+    return try {
+        call.queryParameters["user_name"]!!
+    } catch (ex: Exception){
+        call.respond(
+            HttpStatusCode.BadRequest, ApiResponse<String>(
+                errorMessage = "Invalid username"
+            )
+        )
+        null
+    }
+}
+suspend fun extractUsername(call: RoutingCall): String?{
+    return try {
+        call.pathParameters["id"]!!
+    } catch (ex: Exception){
+        call.respond(
+            HttpStatusCode.BadRequest, ApiResponse<String>(
+                errorMessage = "Invalid username"
+            )
+        )
         null
     }
 }
@@ -26,7 +67,8 @@ suspend fun extractUUID(call: RoutingCall): String?{
         call.respond(
             HttpStatusCode.BadRequest, ApiResponse<String>(
                 errorMessage = "Invalid uuid"
-            ))
+            )
+        )
         null
     }
 }
@@ -40,4 +82,8 @@ fun extractFilters(call: RoutingCall): CharacterFilters{
         younger = call.queryParameters["younger"]?.toIntOrNull()
     )
 }
-val encryptor = Algorithms.AES_256_PBE_GCM("7f6c74a58d9034f5e235bf4e162f89aa", "a0a1a2a3a4a5a6a7")
+fun getRandomNumber(maxNumber: Int): Int{
+    val random = SecureRandom()
+    random.generateSeed(10)
+    return random.nextInt(0, maxNumber)
+}
