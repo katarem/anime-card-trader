@@ -38,3 +38,5 @@ out/
 files
 
 /src/main/resources/*.json
+**.db
+docs
